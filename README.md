@@ -1,123 +1,133 @@
-# Inventory
+# PJurke Infrastructure Ansible Playbooks
+This repository contains the central Ansible playbooks used to manage my server infrastructure.
+
+## Concept
+This is a **Playbook-Only Repository**. All reusable logic (tasks, templates, handlers) is extracted into individual Ansible Roles, which live in separate Git repositories (e.g., `ansible-role-security`, `ansible-role-textreview`).
+
+This repository defines:
+
+1. **Playbooks:** The orchestration files (e.g., `initial-setup.yml`, `deploy-app.yml`).
+2. **Inventory:** The list of servers (`inventory.ini`).
+3. **Secrets:** All encrypted secrets (via Ansible Vault) in the `secrets/` directory.
+4. **Dependencies:** The `requirements.yml`, which defines which external roles and collections are needed.
 
 ## Requirements (Client)
 
-1. Install Ansible
+1. **Ansible** must be installed locally.
 ```bash
 brew install ansible
 ```
 
-2. Install sshpass
+2. **sshpass** must be installed locally.
 ```bash
 brew install sshpass
 ```
 
-## Initial Setup
+3. **Git** must be installed (to clone the roles).
 
-The initial setup does the following:
-- Harden the server
-- Implement the Grafana Loki Cloud logging
-- Add the central user `adminuser`
+## First-Time Client Setup
+Before you can run any playbooks, you must install all external roles and collections using `ansible-galaxy`:
 
-1. Add the server to the `inventory.ini` file, directly below `[new_servers]`.
-```yml
-[new_servers]
-<servername> ansible_host=<ip> ansible_user=root
-```
-
-2. Run the initialization script on the client.
 ```bash
-ansible-playbook -i inventory.ini initial-setup.yml \
-  --tags "cicd" \
-  --private-key ~/.ssh/id_rsa_adminuser_main-server \
-  --ask-vault-pass
-  --ask-become-pass
-  --become-method su
+ansible-galaxy install -r requirements.yml
 ```
 
-3. To complete the step, please adapt the `inventory.ini`:<br>
-Put the initialized server directly under `[running_servers]` and adapt the line:
+This command reads the `requirements.yml` file and downloads all dependencies into your local Ansible path.
 
-```yml
-[running_servers]
-<server name> ansible_host=<ip> ansible_port=3344 ansible_user=adminuser ansible_ssh_private_key_file=<path>
+## Secrets Management (IMPORTANT)
+All secrets are managed using Ansible Vault and are stored in the secrets/ directory. The structure is:
+
+```
+secrets/
+├── loki-secrets.yml
+├── philipjurke/
+│   └── vault.yml
+└── textreview/
+    ├── vault.yml
+    ├── production-vault.yml
+    └── staging-vault.yml
 ```
 
-## Install Docker
+The playbooks (e.g., `deploy-app.yml`) load these files automatically. You will be prompted for the password via `--ask-vault-pass` when running a command.
 
-`inventory.ini`
-```yml
-[docker_servers]
-<server name> ansible_host=<ip> ansible_port=3344 ansible_user=adminuser ansible_ssh_private_key_file=<path>
-```
+## Server Management
+### 1. Add a New Server (Initial Setup)
+   1. Add the new server (with `root` access and IP) to the `inventory.ini` under the `[new_servers]` group:
+   ```ini
+   [new_servers]
+   new-server-name ansible_host=1.2.3.4 ansible_user=root
+   ```
 
-`bash`
-```bash
-ansible-playbook -i inventory.ini install-docker.yml --ask-become-pass --become-method su
-```
+   2. Run the `initial-setup.yml` playbook. It installs basic security (ufw, fail2ban), changes the SSH port, creates the `adminuser` and `deployeruser`, installs Podman, and sets up monitoring.
+   ```bash
+   # Run this as "root", using "su" as the become method
+   ansible-playbook -i inventory.ini initial-setup.yml --limit new-server-name \
+   --private-key ~/.ssh/id_rsa_adminuser_main-server \
+   --ask-vault-pass \
+   --ask-become-pass \
+   --become-method su
+   ```
 
-## Install Traefik
-`inventory.ini`
-```yml
-[traefik_servers]
-<server name> ansible_host=<ip> ansible_port=3344 ansible_user=adminuser ansible_ssh_private_key_file=<path>
-```
+   3. IMPORTANT: After the run succeeds, update the `inventory.ini`:
+   - Move the server from `[new_servers]` to `[running_servers]` (and other relevant groups).
+   - Update the entry to use the new port (`3344`) and the `adminuser`:
+   ```ini
+   [running_servers]
+   main-server ansible_host=1.2.3.4 ansible_port=3344 ansible_user=adminuser
+   ```
 
-`bash`
+### 2. Install Traefik Reverse Proxy
+Run this playbook to deploy Traefik to any server in the `[traefik_servers]` group.
 ```bash
 ansible-playbook -i inventory.ini install-traefik.yml \
-  --private-key ~/.ssh/id_rsa_adminuser_main-server
-```
-
-## Automated Deployment
-
-Deployments are triggered automatically by a push to the `main` branch of the respective application's repository (e.g., `pjurke/philipjurke`).
-
-The process is managed by a GitHub Actions workflow (`.github/workflows/deploy.yml` in the application repository). It performs the following steps:
-
-1. Builds a multi-architecture Docker image (`linux/amd64` and `linux/arm64`).
-2. Pushes the image to the GitHub Container Registry.
-3. Triggers this repository's `deploy-app.yml` playbook to deploy the new image to both the staging and production environments.
-
-`bash`
-```bash
-ansible-playbook -i inventory.ini deploy-app.yml \
-  --extra-vars "app_name=philipjurke env=staging image_tag=your_image_tag_here" \
-  --ask-vault-pass
-
-ansible-playbook -i inventory.ini deploy-app.yml \
-  --extra-vars "app_name=philipjurke env=staging" \
   --private-key ~/.ssh/id_rsa_adminuser_main-server \
+  --become-method sudo
+```
+
+### 3. Deploy Applications (Staging/Production)
+The `deploy-app.yml` playbook is used to deploy applications like `philipjurke` or `textreview`. Target servers are controlled by groups in `inventory.ini` (e.g., `[philipjurke_servers]`).
+
+The `app_name` and `env` variables control what is deployed where.
+
+```bash
+# Example: Deploy 'textreview' to 'staging'
+ansible-playbook -i inventory.ini deploy-app.yml \
+  --extra-vars "app_name=textreview env=staging" \
+  --private-key ~/.ssh/id_rsa_adminuser_main-server \
+  --become-method sudo \
   --ask-vault-pass
 ```
+
+```bash
+# Example: Deploy 'philipjurke' to 'production' (image_tag is optional)
+ansible-playbook -i inventory.ini deploy-app.yml \
+  --extra-vars "app_name=philipjurke env=production image_tag=1.2.3" \
+  --private-key ~/.ssh/id_rsa_adminuser_main-server \
+  --become-method sudo \
+  --ask-vault-pass
+```
+
+
+
 
 ## Self-Hosted GitHub Runner `not used`
-This setup deploys a self-hosted, ARM64-compatible GitHub Actions runner inside a Podman container. Each runner is tied to a specific repository.
+This playbook sets up a runner. Configuration (owner, repo, PAT) must be passed as `extra-vars`.
 
-1. Add the server to the inventory
-
-```ini
-[github_runner_servers]
-<server name> ansible_host=<ip> ansible_port=3344 ansible_user=adminuser ansible_ssh_private_key_file=<path>
-```
-
-2. Run the playbook
-
-**For Organizations**
-The PAT needs the scope "admin:org".
+**For a Repository (PAT needs `repo` scope):**
 ```bash
 ansible-playbook -i inventory.ini deploy-runner.yml \
   --private-key ~/.ssh/id_rsa_adminuser_main-server \
-  --extra-vars "github_owner=Text-Review" \
-  --extra-vars "github_pat=pat"
-```
-
-**For Repos**
-The PAT needs the scope "repo".
-```bash
-ansible-playbook -i inventory.ini deploy-runner.yml \
-  --private-key ~/.ssh/id_rsa_adminuser_main-server \
+  --become-method sudo \
   --extra-vars "github_owner=PJurke" \
   --extra-vars "github_repository=philipjurke" \
-  --extra-vars "github_pat=pat"
+  --extra-vars "github_pat=your_pat_here"
+```
+
+**For an Organization (PAT needs admin:org scope):**
+```bash
+ansible-playbook -i inventory.ini deploy-runner.yml \
+  --private-key ~/.ssh/id_rsa_adminuser_main-server \
+  --become-method sudo \
+  --extra-vars "github_owner=text-review" \
+  --extra-vars "github_pat=your_pat_here"
 ```

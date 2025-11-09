@@ -12,7 +12,6 @@
     deployer_ssh_public: "~/.ssh/id_rsa_deployeruser_main-server.pub"
     deployer_ssh_public_cicd: "~/.ssh/id_rsa_github_actions.pub"
     deployer_user_id: 1001
-    ansible_become_flags: '-l'
 
   roles:
     - security
