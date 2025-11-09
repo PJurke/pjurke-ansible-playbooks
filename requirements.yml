@@ -1,0 +1,31 @@
+---
+collections:
+  - name: community.general
+  - name: grafana.grafana
+  - name: containers.podman
+
+roles:
+  # --- 'pjurke' ---
+  - src: git@github.com:pjurke/ansible-role-security.git
+    scm: git
+    name: security
+  - src: git@github.com:pjurke/ansible-role-podman.git
+    scm: git
+    name: podman
+  - src: git@github.com:pjurke/ansible-role-traefik.git
+    scm: git
+    name: traefik
+  - src: git@github.com:pjurke/ansible-role-monitoring.git
+    scm: git
+    name: monitoring
+  - src: git@github.com:pjurke/ansible-role-github-runner.git
+    scm: git
+    name: github-runner
+  - src: git@github.com:pjurke/ansible-role-philipjurke.git
+    scm: git
+    name: philipjurke
+
+# --- 'text-review' ---
+  - src: git@github.com:text-review/ansible-role-textreview.git
+    scm: git
+    name: textreview

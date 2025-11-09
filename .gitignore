@@ -1,0 +1,7 @@
+# Ansible Galaxy-Roles
+roles/
+
+# Local Vault-Files
+vault-pass.txt
+.vault_pass
+secrets

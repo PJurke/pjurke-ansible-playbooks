@@ -1,0 +1,10 @@
+- name: Deploy Traefik Reverse Proxy
+  hosts: traefik_servers
+  become: yes
+
+  vars:
+    deployer_user_name: deployeruser
+    deployer_user_id: 1001
+
+  roles:
+    - traefik

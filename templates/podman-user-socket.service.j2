@@ -1,0 +1,14 @@
+[Unit]
+Description=Enable and start podman.socket for user {{ deployer_user_name }}
+After=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User={{ deployer_user_name }}
+Group={{ deployer_user_name }}
+Environment="XDG_RUNTIME_DIR=/run/user/{{ deployer_user_id }}"
+ExecStart=/usr/bin/systemctl --user enable --now podman.socket
+
+[Install]
+WantedBy=multi-user.target
