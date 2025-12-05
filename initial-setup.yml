@@ -120,6 +120,8 @@
         user: "{{ deployer_user_name }}"
         key: "{{ lookup('file', deployer_ssh_public_cicd) }}"
         state: present
+        # To do: Allow multiple services
+        key_options: 'command="/usr/bin/systemctl --user restart textreview-backend.service",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty'
       when: deployer_ssh_public_cicd != ""
       tags:
         - ssh
