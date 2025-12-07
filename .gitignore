@@ -1,5 +1,5 @@
-# Ansible Galaxy-Roles
-roles/
+# External Roles
+external_roles/
 
 # Local Vault-Files
 vault-pass.txt

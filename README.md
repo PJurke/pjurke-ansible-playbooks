@@ -1,12 +1,12 @@
 # PJurke Infrastructure Ansible Playbooks
-This repository contains the central Ansible playbooks used to manage my server infrastructure.
+This repository contains the central Ansible playbooks and roles used to manage my server infrastructure.
 
 ## Concept
-This is a **Playbook-Only Repository**. All reusable logic (tasks, templates, handlers) is extracted into individual Ansible Roles, which live in separate Git repositories (e.g., `ansible-role-security`, `ansible-role-textreview`).
+All reusable logic (tasks, templates, handlers) is extracted into individual Ansible Roles.
 
 This repository defines:
 
-1. **Playbooks:** The orchestration files (e.g., `initial-setup.yml`, `deploy-app.yml`).
+1. **Playbooks:** The orchestration files (e.g., `bootstrap.yml`).
 2. **Inventory:** The list of servers (`inventory.ini`).
 3. **Secrets:** All encrypted secrets (via Ansible Vault) in the `secrets/` directory.
 4. **Dependencies:** The `requirements.yml`, which defines which external roles and collections are needed.
@@ -34,7 +34,7 @@ ansible-galaxy install -r requirements.yml
 
 This command reads the `requirements.yml` file and downloads all dependencies into your local Ansible path.
 
-## Secrets Management (IMPORTANT)
+## Secrets Management
 All secrets are managed using Ansible Vault and are stored in the secrets/ directory. The structure is:
 
 ```
@@ -51,10 +51,10 @@ secrets/
 The playbooks (e.g., `deploy-app.yml`) load these files automatically. You will be prompted for the password via `--ask-vault-pass` when running a command.
 
 ## Server Management
-### 1. Add a New Server (Initial Setup)
-   1. Add the new server (with `root` access and IP) to the `inventory.ini` under the `[new_servers]` group:
+### 1. Bootstrap
+   1. Add the new server (with `root` access and IP) to the `inventory.ini` under the `[bootstrap]` group:
    ```ini
-   [new_servers]
+   [bootstrap]
    new-server-name ansible_host=1.2.3.4 ansible_user=root
    ```
 

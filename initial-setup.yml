@@ -6,8 +6,6 @@
     - secrets/loki-secrets.yml
 
   vars:
-    admin_user_name: adminuser
-    admin_ssh_public: "~/.ssh/id_rsa_adminuser_main-server.pub"
     deployer_user_name: deployeruser
     deployer_ssh_public: "~/.ssh/id_rsa_deployeruser_main-server.pub"
     deployer_ssh_public_cicd: "~/.ssh/id_rsa_github_actions.pub"
@@ -79,25 +77,7 @@
       tags:
         - user
 
-    - name: 8. Create a new user with sudo privileges
-      user:
-        name: "{{ admin_user_name }}"
-        state: present
-        groups: sudo
-        append: yes
-        shell: /bin/bash
-      tags:
-        - user
-  
-    - name: 9. Add SSH authorized key for the new admin user
-      ansible.posix.authorized_key:
-        user: "{{ admin_user_name }}"
-        key: "{{ lookup('file', admin_ssh_public) }}"
-        state: present
-      tags:
-        - ssh
-
-    - name: 10. Create a dedicated, non-interactive user for deployments
+    - name: 8. Create a dedicated, non-interactive user for deployments
       user:
         name: "{{ deployer_user_name }}"
         state: present
@@ -107,7 +87,7 @@
       tags:
         - user
 
-    - name: 11. Add SSH authorized key for the new deployer user
+    - name: 9. Add SSH authorized key for the new deployer user
       ansible.posix.authorized_key:
         user: "{{ deployer_user_name }}"
         key: "{{ lookup('file', deployer_ssh_public) }}"
@@ -115,7 +95,7 @@
       tags:
         - ssh
 
-    - name: 12. Add dedicated CI/CD SSH authorized key for the deployer user
+    - name: 10. Add dedicated CI/CD SSH authorized key for the deployer user
       ansible.posix.authorized_key:
         user: "{{ deployer_user_name }}"
         key: "{{ lookup('file', deployer_ssh_public_cicd) }}"
@@ -127,7 +107,7 @@
         - ssh
         - cicd
 
-    - name: 13. Configure automatic security updates
+    - name: 11. Configure automatic security updates
       template:
         src: templates/50unattended-upgrades.j2
         dest: /etc/apt/apt.conf.d/50unattended-upgrades
@@ -137,17 +117,17 @@
       tags:
         - updates
 
-    - name: 14. Copy the systemd service file for the user podman socket
+    - name: 12. Copy the systemd service file for the user podman socket
       ansible.builtin.template:
         src: templates/podman-user-socket.service.j2
         dest: /etc/systemd/system/podman-user-socket.service
         mode: '0644'
 
-    - name: 15. Reload systemd daemon to recognize the new service
+    - name: 13. Reload systemd daemon to recognize the new service
       ansible.builtin.systemd:
         daemon_reload: yes
 
-    - name: 16. Enable and start the podman-user-socket service
+    - name: 14. Enable and start the podman-user-socket service
       ansible.builtin.systemd:
         name: podman-user-socket.service
         enabled: yes

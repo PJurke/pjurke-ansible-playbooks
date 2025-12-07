@@ -1,0 +1,30 @@
+---
+- name: 1. Ensure that the ‘sudo’ group exists
+  group:
+    name: sudo
+    state: present
+
+- name: 2. Create admin user '{{ bootstrap_user }}'
+  user:
+    name: "{{ bootstrap_user }}"
+    state: present
+    groups: sudo
+    append: yes
+    shell: /bin/bash
+    create_home: yes
+
+- name: 3. Store SSH key for '{{ bootstrap_user }}'
+  ansible.posix.authorized_key:
+    user: "{{ bootstrap_user }}"
+    key: "{{ lookup('file', bootstrap_ssh_key_path) }}"
+    state: present
+    exclusive: yes
+
+- name: 4. Set up passwordless sudo for '{{ bootstrap_user }}'
+  copy:
+    dest: "/etc/sudoers.d/{{ bootstrap_user }}"
+    content: "{{ bootstrap_user }} ALL=(ALL) NOPASSWD: ALL"
+    owner: root
+    group: root
+    mode: '0440'
+    validate: 'visudo -cf %s'
