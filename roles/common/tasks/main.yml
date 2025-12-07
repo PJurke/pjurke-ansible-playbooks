@@ -1,0 +1,9 @@
+---
+- name: Setup packages
+  import_tasks: packages.yml
+
+- name: Setup timezone
+  import_tasks: timezone.yml
+
+- name: Setup acl
+  import_tasks: acl.yml

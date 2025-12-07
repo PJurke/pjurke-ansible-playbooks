@@ -50,6 +50,12 @@ secrets/
 
 The playbooks (e.g., `deploy-app.yml`) load these files automatically. You will be prompted for the password via `--ask-vault-pass` when running a command.
 
+## Playbooks and Roles
+|Playbook |Roles    |Content                                     |
+|---------|---------|--------------------------------------------|
+|bootstrap|bootstrap|root substitute                             |
+|common   |common   |basic server config: packages, timezone, acl|
+
 ## Server Management
 ### 1. Bootstrap
    1. Add the new server (with `root` access and IP) to the `inventory.ini` under the `[bootstrap]` group:

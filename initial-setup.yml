@@ -17,42 +17,6 @@
     - podman
 
   tasks:
-    - name: 1. Update and upgrade apt packages
-      apt:
-        update_cache: yes
-        upgrade: dist
-        autoremove: yes
-      tags:
-        - update
-
-    - name: 2. Install acl package for filesystem permissions
-      apt:
-        name: acl
-        state: present
-      tags:
-        - packages
-        - acl
-
-    - name: 3. Enable acl support in /etc/fstab dynamically
-      ansible.posix.mount:
-        path: /
-        src: "{{ item.device }}"
-        fstype: "{{ item.fstype }}"
-        opts: "{{ item.options.split(',') | union(['acl']) | join(',') }}"
-        state: present
-      loop: "{{ ansible_facts['mounts'] }}"
-      when: item.mount == "/"
-      register: fstab_result
-      tags:
-        - acl
-
-    - name: 4. Remount root filesystem to apply acl changes
-      ansible.builtin.command:
-        cmd: mount -o remount /
-      when: fstab_result.changed
-      tags:
-        - acl
-
     - name: 5. Allow unprivileged users to bind to privileged ports (for rootless Traefik)
       ansible.posix.sysctl:
         name: net.ipv4.ip_unprivileged_port_start
@@ -62,13 +26,6 @@
       tags:
         - security
         - network
-
-    - name: 6. Install unattended-upgrades package
-      apt:
-        name: "unattended-upgrades"
-        state: present
-      tags:
-        - packages
 
     - name: 7. Enable lingering for deployer user to allow systemd services without login
       ansible.builtin.command:
@@ -106,16 +63,6 @@
       tags:
         - ssh
         - cicd
-
-    - name: 11. Configure automatic security updates
-      template:
-        src: templates/50unattended-upgrades.j2
-        dest: /etc/apt/apt.conf.d/50unattended-upgrades
-        owner: root
-        group: root
-        mode: '0644'
-      tags:
-        - updates
 
     - name: 12. Copy the systemd service file for the user podman socket
       ansible.builtin.template:

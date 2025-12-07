@@ -1,0 +1,25 @@
+---
+- name: Update and upgrade apt packages
+  apt:
+    update_cache: yes
+    upgrade: dist
+    autoremove: yes
+  tags: [update]
+
+- name: Install essential admin tools and dependencies
+  apt:
+    name:
+      - acl
+      - htop
+      - unattended-upgrades
+    state: present
+  tags: [packages]
+
+- name: Configure automatic security updates
+  template:
+    src: templates/50unattended-upgrades.j2
+    dest: /etc/apt/apt.conf.d/50unattended-upgrades
+    owner: root
+    group: root
+    mode: '0644'
+  tags: [update]

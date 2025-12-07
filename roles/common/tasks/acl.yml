@@ -1,0 +1,18 @@
+---
+- name: Enable acl support in /etc/fstab dynamically
+  ansible.posix.mount:
+    path: /
+    src: "{{ item.device }}"
+    fstype: "{{ item.fstype }}"
+    opts: "{{ item.options.split(',') | union(['acl']) | join(',') }}"
+    state: present
+  loop: "{{ ansible_facts['mounts'] }}"
+  when: item.mount == "/"
+  register: fstab_result
+  tags: [acl]
+
+- name: Remount root filesystem to apply acl changes
+  ansible.builtin.command:
+    cmd: mount -o remount /
+  when: fstab_result.changed
+  tags: [acl]

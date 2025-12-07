@@ -1,0 +1,7 @@
+- name: Common Setup
+  hosts: running_servers
+  remote_user: admin-user
+  become: yes
+
+  roles:
+    - common
