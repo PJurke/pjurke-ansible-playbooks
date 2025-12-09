@@ -1,0 +1,98 @@
+---
+- name: Install essential security packages
+  apt:
+    name:
+      - fail2ban
+      - ufw
+    state: present
+  tags: [security, packages]
+
+# --- 1. FIREWALL (UFW) ---
+
+- name: Set UFW policy to ‘deny’ (incoming)
+  community.general.ufw:
+    policy: deny
+    direction: incoming
+  tags: [security, ufw]
+
+- name: Set UFW policy to ‘allow’ (outgoing)
+  community.general.ufw:
+    policy: allow
+    direction: outgoing
+  tags: [security, ufw]
+
+- name: Allow new SSH port in UFW
+  community.general.ufw:
+    rule: allow
+    port: "{{ security_ssh_port | string }}"
+    proto: tcp
+    comment: 'SSH Custom Port'
+  tags: [security, ufw]
+
+- name: Allow web server ports (HTTP/HTTPS) in UFW
+  community.general.ufw:
+    rule: allow
+    port: "{{ item | string }}"
+    proto: tcp
+  loop: "{{ security_allowed_tcp_ports }}"
+  tags: [security, ufw]
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
+  tags: [security, ufw]
+
+# --- 2. SSH ---
+
+- name: Harden SSH configuration (port, root, passwords)
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+    validate: 'sshd -t -f %s'
+  loop:
+    # --- Basics & Port ---
+    - { regexp: '^#?Port\s+', line: "Port {{ security_ssh_port }}" }
+    - { regexp: '^#?Protocol\s+', line: "Protocol 2" }
+
+    # --- Authentication Security ---
+    - { regexp: '^#?PermitRootLogin\s+', line: 'PermitRootLogin no' }
+    - { regexp: '^#?PasswordAuthentication\s+', line: 'PasswordAuthentication no' }
+    - { regexp: '^#?PubkeyAuthentication\s+', line: 'PubkeyAuthentication yes' }
+    - { regexp: '^#?PermitEmptyPasswords\s+', line: 'PermitEmptyPasswords no' }
+    - { regexp: '^#?ChallengeResponseAuthentication\s+', line: 'ChallengeResponseAuthentication no' }
+    - { regexp: '^#?MaxAuthTries\s+', line: 'MaxAuthTries 3' }
+    - { regexp: '^#?UsePAM\s+', line: 'UsePAM yes' }
+
+    # --- User Whitelist ---
+    - { regexp: '^#?AllowUsers\s+', line: "AllowUsers {{ admin_user_name }}" }
+
+    # --- Session Management (Timeout after 10 min) ---
+    - { regexp: '^#?ClientAliveInterval\s+', line: 'ClientAliveInterval 300' }
+    - { regexp: '^#?ClientAliveCountMax\s+', line: 'ClientAliveCountMax 2' }
+
+    # --- Forwarding & Cosmetics ---
+    - { regexp: '^#?X11Forwarding\s+', line: 'X11Forwarding no' }
+    - { regexp: '^#?PrintMotd\s+', line: 'PrintMotd no' }
+  notify: Restart SSH
+  tags: [security, ssh]
+
+# --- 3. FAIL2BAN ---
+
+- name: Copy Fail2Ban configuration (jail.local)
+  template:
+    src: jail.local.j2
+    dest: /etc/fail2ban/jail.local
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Fail2Ban
+  tags: [security, fail2ban]
+
+- name: Start and activate the Fail2Ban service
+  service:
+    name: fail2ban
+    state: started
+    enabled: yes
+  tags: [security, fail2ban]

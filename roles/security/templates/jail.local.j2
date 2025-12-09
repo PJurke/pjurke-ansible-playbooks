@@ -1,0 +1,12 @@
+# Ansible Managed File
+# /etc/fail2ban/jail.local
+
+[DEFAULT]
+bantime = 1h
+
+# Number of failed login attempts before a ban is initiated
+maxretry = 5
+
+[sshd]
+enabled = true
+port = {{ security_ssh_port }}

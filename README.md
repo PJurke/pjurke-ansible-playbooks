@@ -55,6 +55,7 @@ The playbooks (e.g., `deploy-app.yml`) load these files automatically. You will 
 |---------|---------|--------------------------------------------|
 |bootstrap|bootstrap|root substitute                             |
 |common   |common   |basic server config: packages, timezone, acl|
+|x        |security |ufw, ssh and fail2ban                       |
 
 ## Server Management
 ### 1. Bootstrap

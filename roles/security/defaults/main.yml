@@ -1,0 +1,9 @@
+---
+
+# Allowed TCP Ports
+security_allowed_tcp_ports:
+  - 80    # HTTP
+  - 443   # HTTPS
+
+# New SSH Port
+security_ssh_port: 3344
