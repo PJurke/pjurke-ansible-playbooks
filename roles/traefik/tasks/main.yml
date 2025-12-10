@@ -1,0 +1,63 @@
+---
+# 1. Create user and register UID (important for XDG variable later)
+- name: Create Traefik users
+  user:
+    name: "{{ traefik_user }}"
+    shell: /bin/bash
+    create_home: yes
+    home: "/home/{{ traefik_user }}"
+    state: present
+  register: traefik_user_info # We need the .uid from it.
+
+- name: Enable lingering (for rootless service)
+  command: "loginctl enable-linger {{ traefik_user }}"
+  register: linger_result
+  # loginctl is usually silent when active.
+  # 'Created' usually appears in stderr.
+  changed_when: "'Created' in linger_result.stderr"
+
+- name: Create a shared configuration directory
+  file:
+    path: "{{ traefik_dynamic_conf_dir }}"
+    state: directory
+    owner: "{{ traefik_user }}"
+    group: "{{ traefik_user }}"
+    mode: '0770' # Only owners and groups. Others can enter via ACL.
+
+# --- QUADLET SETUP ---
+
+- name: Create system directory for user
+  file:
+    path: "/home/{{ traefik_user }}/.config/containers/systemd"
+    state: directory
+    owner: "{{ traefik_user }}"
+    group: "{{ traefik_user }}"
+    mode: '0755'
+    recurse: yes
+
+- name: Copy Traefik configuration (traefik.yml)
+  template:
+    src: traefik.yml.j2
+    dest: "/home/{{ traefik_user }}/traefik.yml"
+    owner: "{{ traefik_user }}"
+    group: "{{ traefik_user }}"
+    mode: '0640' # Readable only by Traefik
+  notify: Restart Traefik
+
+- name: Copy Traefik Quadlet (.container)
+  template:
+    src: traefik.container.j2
+    dest: "/home/{{ traefik_user }}/.config/containers/systemd/traefik.container"
+    owner: "{{ traefik_user }}"
+    group: "{{ traefik_user }}"
+    mode: '0644'
+  notify: Restart Traefik
+
+- name: System Daemon Reload (User Scope)
+  become: yes
+  become_user: "{{ traefik_user }}"
+  systemd:
+    daemon_reload: yes
+    scope: user
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ traefik_user_info.uid }}"

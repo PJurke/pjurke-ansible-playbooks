@@ -1,0 +1,12 @@
+---
+- name: Restart Traefik
+  become: yes
+  become_user: "{{ traefik_user }}"
+  systemd:
+    name: traefik
+    state: restarted
+    scope: user
+  environment:
+    # Ansible switches users but does not get a full session.
+    # We force Systemd to use the correct socket.
+    XDG_RUNTIME_DIR: "/run/user/{{ traefik_user_info.uid }}"
