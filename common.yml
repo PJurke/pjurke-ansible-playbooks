@@ -3,5 +3,10 @@
   remote_user: admin-user
   become: yes
 
+  vars:
+    admin_user_name: admin-user
+    security_ssh_port: 3344
+
   roles:
     - common
+    - security
