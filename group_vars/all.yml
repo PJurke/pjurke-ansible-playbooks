@@ -1,0 +1,3 @@
+app_port_map:
+  philipjurke: 8081
+  textreview: 8082

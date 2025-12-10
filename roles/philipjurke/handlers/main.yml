@@ -1,0 +1,10 @@
+---
+- name: Restart PhilipJurke
+  become: yes
+  become_user: "{{ philipjurke_user }}"
+  systemd:
+    name: philipjurke
+    state: restarted
+    scope: user
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.getent_passwd[philipjurke_user][1] }}"

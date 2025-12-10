@@ -1,0 +1,16 @@
+http:
+  routers:
+    philipjurke-{{ env | default('prod') }}-router:
+      rule: "Host(`{{ philipjurke_domain }}`)"
+      service: "philipjurke-{{ env | default('prod') }}-service"
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: myresolver
+
+  services:
+    philipjurke-{{ env | default('prod') }}-service:
+      loadBalancer:
+        servers:
+          # Points to the local port of the container
+          - url: "http://127.0.0.1:{{ philipjurke_host_port }}"

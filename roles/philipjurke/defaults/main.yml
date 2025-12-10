@@ -1,0 +1,16 @@
+---
+# Users and paths
+philipjurke_user: philipjurke-user
+philipjurke_home: "/home/{{ philipjurke_user }}"
+
+# Container Details
+# Adjust if the image has a different name (e.g., ghcr.io/pjurke/philipjurke)
+philipjurke_image: "ghcr.io/pjurke/philipjurke"
+philipjurke_tag: "latest"
+
+# Networking
+philipjurke_domain: "philipjurke.de"
+philipjurke_host_port: "{{ app_port_map['philipjurke'] | default(8081) }}"
+
+# Traefik Integration
+traefik_dynamic_conf_dir: "/opt/traefik/dynamic"

@@ -1,0 +1,78 @@
+---
+- name: Create app user '{{ philipjurke_user }}'
+  user:
+    name: "{{ philipjurke_user }}"
+    shell: /bin/bash
+    create_home: yes
+    home: "{{ philipjurke_home }}"
+    state: present
+
+- name: Reload user facts (for UID access)
+  getent:
+    database: passwd
+    key: "{{ philipjurke_user }}"
+
+- name: Enable lingering (for rootless containers)
+  command: "loginctl enable-linger {{ philipjurke_user }}"
+  register: linger_result
+  changed_when: "'Created' in linger_result.stderr"
+
+- name: ACL: Grant write permissions for Traefik config folder
+  acl:
+    path: "{{ traefik_dynamic_conf_dir }}"
+    entity: "{{ philipjurke_user }}"
+    etype: user
+    permissions: rwx
+    state: present
+
+# --- PHASE 2: App Deployment (User Context) ---
+
+- name: Log in to GHCR.io (if you have a token)
+  command: >
+    podman login ghcr.io
+    --username "{{ ghcr_username }}"
+    --password "{{ ghcr_token }}"
+  become: yes
+  become_user: "{{ philipjurke_user }}"
+  no_log: yes
+  # Only execute if token is defined in the vault
+  when: ghcr_token is defined
+
+- name: Create system directory
+  file:
+    path: "{{ philipjurke_home }}/.config/containers/systemd"
+    state: directory
+    owner: "{{ philipjurke_user }}"
+    group: "{{ philipjurke_user }}"
+    mode: '0755'
+    recurse: yes
+
+- name: Deploy Traefik Router Config (Dynamic File)
+  template:
+    src: traefik-router.yml.j2
+    dest: "{{ traefik_dynamic_conf_dir }}/philipjurke.yml"
+    owner: "{{ philipjurke_user }}"
+    mode: '0644'
+  become: yes
+  become_user: "{{ philipjurke_user }}"
+  # No Notify needed - Traefik loads the file hot-reload!
+
+- name: Deploy Quadlet (.container) file
+  template:
+    src: philipjurke.container.j2
+    dest: "{{ philipjurke_home }}/.config/containers/systemd/philipjurke.container"
+    owner: "{{ philipjurke_user }}"
+    mode: '0644'
+  become: yes
+  become_user: "{{ philipjurke_user }}"
+  notify: Restart PhilipJurke
+
+- name: System Daemon Reload (User Scope)
+  systemd:
+    daemon_reload: yes
+    scope: user
+  become: yes
+  become_user: "{{ philipjurke_user }}"
+  environment:
+    # Access to index [1] for the UID
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.getent_passwd[philipjurke_user][1] }}"
