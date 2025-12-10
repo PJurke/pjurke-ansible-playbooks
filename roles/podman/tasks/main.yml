@@ -1,0 +1,20 @@
+---
+- name: Create Podman group (optional, for organization)
+  group:
+    name: podman
+    state: present
+
+- name: Install Podman packages
+  apt:
+    name:
+      - podman
+      - podman-compose
+    state: present
+    update_cache: yes
+
+- name: Lower unprivileged port start (for rootless web servers)
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_unprivileged_port_start
+    value: '80'
+    state: present
+    reload: yes
