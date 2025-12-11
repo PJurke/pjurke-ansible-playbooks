@@ -1,0 +1,11 @@
+---
+- name: Restart Alloy
+  become: yes
+  become_user: "{{ monitoring_user }}"
+  systemd:
+    name: alloy
+    state: restarted
+    scope: user
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ monitoring_user_info.uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ monitoring_user_info.uid }}/bus"

@@ -1,0 +1,43 @@
+[Unit]
+Description=Grafana Alloy Monitoring Agent
+After=network-online.target
+
+[Container]
+Image={{ alloy_image }}
+# We must allow the container to see host PIDs (for process monitoring)
+PodmanArgs=--pid=host
+# IMPORTANT: Relax security options so that it can read system metrics
+SecurityLabelDisable=true
+
+# --- HEALTHCHECK ---
+HealthCmd=wget --no-verbose --tries=1 --spider http://127.0.0.1:12345/-/ready || exit 1
+HealthInterval=30s
+HealthRetries=3
+HealthStartPeriod=20s
+
+# --- MOUNTS ---
+# 1. Config (Read-Only)
+Volume={{ monitoring_home }}/alloy/config.alloy:/etc/alloy/config.alloy:ro,Z
+
+# 2. Persistence (IMPORTANT for WAL/buffering in case of network failure)
+Volume=alloy-data:/var/lib/alloy/data:Z
+
+# 3. Host Logs (Journald)
+Volume=/var/log/journal:/var/log/journal:ro
+Volume=/etc/machine-id:/etc/machine-id:ro
+
+# 4. Host Metrics (Node Exporter function)
+Volume=/proc:/host/proc:ro
+Volume=/sys:/host/sys:ro
+Volume=/:/host/root:ro,rslave
+
+# --- EXECUTION ---
+# We use the persistent volume for the storage path.
+Exec=run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+
+[Service]
+Restart=always
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target

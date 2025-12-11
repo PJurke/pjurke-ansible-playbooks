@@ -1,0 +1,72 @@
+---
+- name: Create monitoring user
+  user:
+    name: "{{ monitoring_user }}"
+    shell: /bin/bash
+    create_home: yes
+    home: "{{ monitoring_home }}"
+    # IMPORTANT: So that the user is allowed to read host logs
+    groups: systemd-journal
+    append: yes
+    state: present
+  register: monitoring_user_info
+
+- name: Enable lingering
+  command: "loginctl enable-linger {{ monitoring_user }}"
+  register: linger_result
+  changed_when: "'Created' in linger_result.stderr"
+
+- name: Create configuration directory
+  file:
+    path: "{{ monitoring_home }}/alloy"
+    state: directory
+    owner: "{{ monitoring_user }}"
+    group: "{{ monitoring_user }}"
+    mode: '0750'
+
+- name: Create systemd directory
+  file:
+    path: "{{ monitoring_home }}/.config/containers/systemd"
+    state: directory
+    owner: "{{ monitoring_user }}"
+    group: "{{ monitoring_user }}"
+    mode: '0755'
+    recurse: yes
+
+# We use your template, but adapt it slightly (host paths).
+- name: Deploy Alloy configuration (config.alloy)
+  template:
+    src: config.alloy.j2
+    dest: "{{ monitoring_home }}/alloy/config.alloy"
+    owner: "{{ monitoring_user }}"
+    mode: '0640'
+  notify: Restart Alloy
+
+- name: Deploy Alloy Quadlet (.container)
+  template:
+    src: alloy.container.j2
+    dest: "{{ monitoring_home }}/.config/containers/systemd/alloy.container"
+    owner: "{{ monitoring_user }}"
+    mode: '0644'
+  notify: Restart Alloy
+
+- name: Reload systemd user manager (quadlet generation)
+  become: yes
+  become_user: "{{ monitoring_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ monitoring_user_info.uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ monitoring_user_info.uid }}/bus"
+  systemd:
+    daemon_reload: yes
+    scope: user
+
+- name: Enable Alloy service
+  become: yes
+  become_user: "{{ monitoring_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ monitoring_user_info.uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ monitoring_user_info.uid }}/bus"
+  systemd:
+    name: alloy
+    enabled: yes
+    scope: user

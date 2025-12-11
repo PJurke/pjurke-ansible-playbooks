@@ -1,0 +1,82 @@
+// ============================================================
+// LOG CONFIGURATION (LOKI)
+// ============================================================
+
+loki.write "loki_default" {
+  endpoint {
+    url = "{{ loki_url }}"
+    basic_auth {
+      username = "{{ loki_user }}"
+      password = "{{ loki_api_key }}"
+    }
+  }
+}
+
+loki.relabel "journal_relabel_rules" {
+  forward_to = []
+
+  rule {
+    source_labels = ["__journal_priority_keyword"]
+    target_label  = "level"
+  }
+  rule {
+    source_labels = ["__journal_systemd_unit", "__journal_syslog_identifier"]
+    target_label  = "service_name"
+    regex         = ";?(.*)"
+    replacement   = "$1"
+  }
+}
+
+loki.source.journal "journal_source" {
+  forward_to = [loki.write.loki_default.receiver]
+  
+  // Important: We are reading the mounted logs here
+  path = "/var/log/journal"
+
+  labels = {
+    "job"  = "systemd-journal",
+    "host" = "{{ inventory_hostname }}",
+  }
+  relabel_rules = loki.relabel.journal_relabel_rules.rules
+}
+
+// ============================================================
+// METRICS CONFIGURATION (MIMIR / PROMETHEUS)
+// ============================================================
+
+{% if mimir_url is defined %}
+prometheus.remote_write "mimir_default" {
+  endpoint {
+    url = "{{ mimir_url }}"
+    basic_auth {
+      username = "{{ mimir_user }}"
+      password = "{{ mimir_api_key }}"
+    }
+  }
+}
+
+prometheus.exporter.unix "metrics_system" {
+  // IMPORTANT: Tell the exporter to use the mounted host paths.
+  procfs_path = "/host/proc"
+  sysfs_path  = "/host/sys"
+  rootfs_path = "/host/root"
+}
+
+prometheus.relabel "metrics_add_labels" {
+  forward_to = [prometheus.remote_write.mimir_default.receiver]
+
+  rule {
+    target_label = "job"
+    replacement  = "integrations/node_exporter"
+  }
+  rule {
+    target_label = "host"
+    replacement  = "{{ inventory_hostname }}"
+  }
+}
+
+prometheus.scrape "metrics_scrape" {
+  targets    = prometheus.exporter.unix.metrics_system.targets
+  forward_to = [prometheus.relabel.metrics_add_labels.receiver]
+}
+{% endif %}

@@ -1,0 +1,8 @@
+---
+monitoring_user: monitoring-user
+monitoring_home: "/home/{{ monitoring_user }}"
+alloy_image: "docker.io/grafana/alloy:latest"
+
+# Disabled by default if no Mimir credentials are present.
+# We only enable it if the variables are filled.
+enable_metrics: true

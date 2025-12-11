@@ -54,8 +54,10 @@ The playbooks (e.g., `deploy-app.yml`) load these files automatically. You will 
 |Playbook |Roles    |Content                                     |Run |
 |---------|---------|--------------------------------------------|----|
 |bootstrap|bootstrap|root substitute                             |ansible-playbook bootstrap.yml -k|
-|common   |common   |basic server config: packages, timezone, acl||
-|x        |security |ufw, ssh and fail2ban                       ||
+|setup    |common   |basic server config: packages, timezone, acl|ansible-playbook setup.yml --ask-vault-pass|
+|setup    |security |ufw, ssh and fail2ban                       ||
+|setup    |podman |                      ||
+|setup    |monitoring |                      ||
 
 ## Server Management
 ### 1. Bootstrap
