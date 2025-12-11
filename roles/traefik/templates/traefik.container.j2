@@ -1,0 +1,27 @@
+[Unit]
+Description=Traefik Reverse Proxy
+After=network-online.target
+
+[Container]
+Image=docker.io/library/traefik:{{ traefik_version }}
+AutoUpdate=registry
+
+# Ports (Thanks to sysctl ‘net.ipv4.ip_unprivileged_port_start=80’, Rootless can do this)
+PublishPort=80:80
+PublishPort=443:443
+
+# Mount configuration
+# 1. The static configuration (which we created above)
+Volume=/home/{{ traefik_user }}/traefik.yml:/etc/traefik/traefik.yml:Z
+# 2. The dynamic folder (where the apps dump their configurations)
+Volume={{ traefik_dynamic_conf_dir }}:/etc/traefik/dynamic:Z
+# 3. Save certificates (persistent named volume)
+Volume=traefik-acme:/letsencrypt:Z
+
+[Service]
+# Automatically start the container at boot (via lingering)
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target

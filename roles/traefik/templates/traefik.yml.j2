@@ -1,0 +1,29 @@
+api:
+  dashboard: true
+  insecure: true    # Only accessible internally (via SSH tunnel or port forwarding)
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+
+websecure:
+  address: ":443"
+
+providers:
+  file:
+    directory: "{{ traefik_dynamic_conf_dir }}"
+    watch: true
+
+certificatesResolvers:
+  myresolver:
+    acme:
+      email: "{{ acme_email }}"
+      storage: "/letsencrypt/acme.json"
+      # We use HTTP Challenge (port 80 must be open)
+      httpChallenge:
+        entryPoint: web
