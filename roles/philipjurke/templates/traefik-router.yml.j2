@@ -12,5 +12,5 @@ http:
     philipjurke-{{ env | default('prod') }}-service:
       loadBalancer:
         servers:
-          # Points to the local port of the container
-          - url: "http://127.0.0.1:{{ philipjurke_host_port }}"
+          # Points to the host gateway internal IP (reachable from Traefik container)
+          - url: "http://host.containers.internal:{{ philipjurke_host_port }}"

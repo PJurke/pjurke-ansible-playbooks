@@ -55,7 +55,7 @@
     mode: '0644'
   become: yes
   become_user: "{{ philipjurke_user }}"
-  # No Notify needed - Traefik loads the file hot-reload!
+  # No Notify needed - Traefik loads the file hot-reload
 
 - name: Deploy Quadlet (.container) file
   template:
@@ -76,3 +76,16 @@
   environment:
     # Access to index [1] for the UID
     XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.getent_passwd[philipjurke_user][1] }}"
+
+# --- PHASE 3: CI/CD Access ---
+
+- name: Authorize GitHub Actions Deploy Key (Restricted to Updates)
+  ansible.posix.authorized_key:
+    user: "{{ philipjurke_user }}"
+    state: present
+    # Ensure this variable is in your secrets/philipjurke/vault.yml
+    key: "{{ github_deploy_public_key }}" 
+    # SECURITY: This restricts the key to ONLY run this command
+    key_options: 'command="/usr/bin/podman auto-update",no-port-forwarding,no-x11-forwarding,no-agent-forwarding,no-pty'
+    comment: "GitHub Actions Auto-Deploy"
+  when: github_deploy_public_key is defined

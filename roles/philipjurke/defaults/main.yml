@@ -14,3 +14,6 @@ philipjurke_host_port: "{{ app_port_map['philipjurke'] | default(8081) }}"
 
 # Traefik Integration
 traefik_dynamic_conf_dir: "/opt/traefik/dynamic"
+
+# CI/CD Access
+github_deploy_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHAidZ6MrjClbLyO3as6wzJ5dy+18TZVOvZboPv6Hj7I github-actions-philipjurke"

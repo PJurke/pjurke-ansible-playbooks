@@ -1,0 +1,16 @@
+---
+- name: Deploy PhilipJurke Personal Website
+  hosts: philipjurke_servers
+  become: yes
+
+  vars:
+    app_name: philipjurke
+    env: production
+
+  vars_files:
+    # Todo: 'github_deploy_public_key'
+    - "secrets/philipjurke/vault.yml"
+
+  roles:
+    - role: philipjurke
+      tags: ["deploy", "philipjurke"]

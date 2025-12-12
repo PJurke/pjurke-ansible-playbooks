@@ -10,6 +10,9 @@ AutoUpdate=registry
 PublishPort=80:80
 PublishPort=443:443
 
+# NETWORK CONFIGURATION
+AddHost=host.containers.internal:host-gateway
+
 # Mount configuration
 # 1. The static configuration (which we created above)
 Volume=/home/{{ traefik_user }}/traefik.yml:/etc/traefik/traefik.yml:Z
