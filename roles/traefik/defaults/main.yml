@@ -5,4 +5,5 @@ acme_email: "pjurke@icloud.com"
 
 # Traefik can't access containers from a different user
 # We use the File Provider approach - each service provides its own yml file here
-traefik_dynamic_conf_dir: "/opt/traefik/dynamic"
+traefik_dynamic_conf_dir_host: "/opt/traefik/dynamic"
+traefik_dynamic_conf_dir_container: "/etc/traefik/dynamic"

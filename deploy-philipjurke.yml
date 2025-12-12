@@ -6,6 +6,8 @@
   vars:
     app_name: philipjurke
     env: production
+    ghcr_username: "{{ github_username }}"
+    ghcr_token: "{{ github_token }}"
 
   vars_files:
     # Todo: 'github_deploy_public_key'

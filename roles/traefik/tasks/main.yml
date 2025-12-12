@@ -18,7 +18,7 @@
 
 - name: Create a shared configuration directory
   file:
-    path: "{{ traefik_dynamic_conf_dir }}"
+    path: "{{ traefik_dynamic_conf_dir_host }}"
     state: directory
     owner: "{{ traefik_user }}"
     group: "{{ traefik_user }}"

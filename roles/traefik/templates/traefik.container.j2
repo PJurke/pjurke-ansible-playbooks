@@ -17,7 +17,7 @@ AddHost=host.containers.internal:host-gateway
 # 1. The static configuration (which we created above)
 Volume=/home/{{ traefik_user }}/traefik.yml:/etc/traefik/traefik.yml:Z
 # 2. The dynamic folder (where the apps dump their configurations)
-Volume={{ traefik_dynamic_conf_dir }}:/etc/traefik/dynamic:Z
+Volume={{ traefik_dynamic_conf_dir_host }}:{{ traefik_dynamic_conf_dir_container }}:Z
 # 3. Save certificates (persistent named volume)
 Volume=traefik-acme:/letsencrypt:Z
 

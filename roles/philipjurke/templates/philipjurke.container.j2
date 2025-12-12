@@ -5,15 +5,13 @@ After=network-online.target
 [Container]
 Image={{ philipjurke_image }}:{{ philipjurke_tag }}
 # We bind to localhost on the assigned port.
-PublishPort=127.0.0.1:{{ philipjurke_host_port }}:3000
+PublishPort={{ philipjurke_host_port }}:3000
 # Enable auto-update (optional, requires label on image)
 AutoUpdate=registry
 
 # Environment variables from Ansible Facts/Vault
 Environment=NODE_ENV={{ env | default('production') }}
 # Example: If you have variables in the vault:
-# Environment=DATABASE_URL={{ database_url | default(‘’) }}
-# Environment=NEXT_PUBLIC_API_URL=https://{{ philipjurke_domain }}
 
 [Service]
 Restart=always

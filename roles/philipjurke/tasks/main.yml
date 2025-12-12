@@ -1,4 +1,6 @@
 ---
+# --- PHASE 1: User & System Setup ---
+
 - name: Create app user '{{ philipjurke_user }}'
   user:
     name: "{{ philipjurke_user }}"
@@ -17,17 +19,29 @@
   register: linger_result
   changed_when: "'Created' in linger_result.stderr"
 
-- name: ACL: Grant write permissions for Traefik config folder
-  acl:
-    path: "{{ traefik_dynamic_conf_dir }}"
-    entity: "{{ philipjurke_user }}"
-    etype: user
-    permissions: rwx
-    state: present
+# --- PHASE 2: Traefik Routing (Root Context) ---
 
-# --- PHASE 2: App Deployment (User Context) ---
+- name: Deploy Traefik Router Config (Dynamic File)
+  template:
+    src: traefik-router.yml.j2
+    dest: "{{ traefik_dynamic_conf_dir_host }}/philipjurke.yml"
+    owner: root
+    group: root
+    mode: '0644'
+  become: yes
+  # No 'become_user', the root will own this file
 
-- name: Log in to GHCR.io (if you have a token)
+- name: Allow PhilipJurke Host Port in UFW
+  community.general.ufw:
+    rule: allow
+    port: "{{ philipjurke_host_port | string }}"
+    proto: tcp
+    comment: "Allow Traffic from Podman Network to PhilipJurke"
+  become: yes
+
+# --- PHASE 3: App Deployment (User Context) ---
+
+- name: Log in to GHCR.io
   command: >
     podman login ghcr.io
     --username "{{ ghcr_username }}"
@@ -35,10 +49,9 @@
   become: yes
   become_user: "{{ philipjurke_user }}"
   no_log: yes
-  # Only execute if token is defined in the vault
   when: ghcr_token is defined
 
-- name: Create system directory
+- name: Create systemd directory for Quadlets
   file:
     path: "{{ philipjurke_home }}/.config/containers/systemd"
     state: directory
@@ -46,16 +59,6 @@
     group: "{{ philipjurke_user }}"
     mode: '0755'
     recurse: yes
-
-- name: Deploy Traefik Router Config (Dynamic File)
-  template:
-    src: traefik-router.yml.j2
-    dest: "{{ traefik_dynamic_conf_dir }}/philipjurke.yml"
-    owner: "{{ philipjurke_user }}"
-    mode: '0644'
-  become: yes
-  become_user: "{{ philipjurke_user }}"
-  # No Notify needed - Traefik loads the file hot-reload
 
 - name: Deploy Quadlet (.container) file
   template:
@@ -74,18 +77,16 @@
   become: yes
   become_user: "{{ philipjurke_user }}"
   environment:
-    # Access to index [1] for the UID
     XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.getent_passwd[philipjurke_user][1] }}"
 
-# --- PHASE 3: CI/CD Access ---
+# --- PHASE 4: CI/CD Access ---
 
-- name: Authorize GitHub Actions Deploy Key (Restricted to Updates)
+- name: Authorize GitHub Actions Deploy Key (Restricted)
   ansible.posix.authorized_key:
     user: "{{ philipjurke_user }}"
     state: present
-    # Ensure this variable is in your secrets/philipjurke/vault.yml
     key: "{{ github_deploy_public_key }}" 
-    # SECURITY: This restricts the key to ONLY run this command
+    # Security feature: Update-only
     key_options: 'command="/usr/bin/podman auto-update",no-port-forwarding,no-x11-forwarding,no-agent-forwarding,no-pty'
     comment: "GitHub Actions Auto-Deploy"
   when: github_deploy_public_key is defined
