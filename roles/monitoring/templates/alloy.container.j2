@@ -8,6 +8,8 @@ Image={{ alloy_image }}
 PodmanArgs=--pid=host
 # IMPORTANT: Relax security options so that it can read system metrics
 SecurityLabelDisable=true
+# IMPORTANT: Allows the container to use the user's group privileges (e.g., systemd-journal)
+GroupAdd=keep-groups
 
 # --- HEALTHCHECK ---
 # HealthCmd=wget --no-verbose --tries=1 --spider http://127.0.0.1:12345/-/ready || exit 1
@@ -23,7 +25,7 @@ Volume={{ monitoring_home }}/alloy/config.alloy:/etc/alloy/config.alloy:ro,Z
 Volume=alloy-data:/var/lib/alloy/data:Z
 
 # 3. Host Logs (Journald)
-Volume=/var/log/journal:/var/log/journal:ro
+Volume=/var/log/journal:/var/log/journal:ro,Z
 Volume=/etc/machine-id:/etc/machine-id:ro
 
 # 4. Host Metrics (Node Exporter function)
