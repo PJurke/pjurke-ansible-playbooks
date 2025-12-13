@@ -79,4 +79,25 @@ prometheus.scrape "metrics_scrape" {
   targets    = prometheus.exporter.unix.metrics_system.targets
   forward_to = [prometheus.relabel.metrics_add_labels.receiver]
 }
+
+prometheus.relabel "traefik_relabel" {
+  forward_to = [prometheus.remote_write.mimir_default.receiver]
+
+  rule {
+    target_label = "job"
+    replacement  = "integrations/traefik"
+  }
+  rule {
+    target_label = "host"
+    replacement  = "{{ inventory_hostname }}"
+  }
+}
+
+prometheus.scrape "traefik_scrape" {
+  targets = [
+    {"__address__" = "127.0.0.1:8080"},
+  ]
+  metrics_path = "/metrics"
+  forward_to   = [prometheus.relabel.traefik_relabel.receiver]
+}
 {% endif %}

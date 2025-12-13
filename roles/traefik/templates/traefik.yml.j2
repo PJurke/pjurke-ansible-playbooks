@@ -2,6 +2,11 @@ api:
   dashboard: true
   insecure: true    # Only accessible internally (via SSH tunnel or port forwarding)
 
+metrics:
+  prometheus:
+    addEntryPointsLabels: true
+    addRoutersLabels: true
+
 entryPoints:
   web:
     address: ":80"

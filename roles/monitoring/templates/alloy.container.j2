@@ -4,6 +4,8 @@ After=network-online.target
 
 [Container]
 Image={{ alloy_image }}
+# Network Host allows us to see the host network (important for Node Exporter & Traefik)
+Network=host
 # We must allow the container to see host PIDs (for process monitoring)
 PodmanArgs=--pid=host
 # IMPORTANT: Relax security options so that it can read system metrics

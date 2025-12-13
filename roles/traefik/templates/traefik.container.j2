@@ -9,6 +9,8 @@ AutoUpdate=registry
 # Ports (Thanks to sysctl ‘net.ipv4.ip_unprivileged_port_start=80’, Rootless can do this)
 PublishPort=80:80
 PublishPort=443:443
+# Expose API/Metrics locally for Alloy
+PublishPort=127.0.0.1:8080:8080
 
 # NETWORK CONFIGURATION
 AddHost=host.containers.internal:host-gateway
