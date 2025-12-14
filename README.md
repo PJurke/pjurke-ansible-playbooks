@@ -51,13 +51,13 @@ secrets/
 The playbooks (e.g., `deploy-app.yml`) load these files automatically. You will be prompted for the password via `--ask-vault-pass` when running a command.
 
 ## Playbooks and Roles
-|Playbook |Roles    |Content                                     |Run |
-|---------|---------|--------------------------------------------|----|
-|bootstrap|bootstrap|root substitute                             |ansible-playbook bootstrap.yml -k|
-|setup    |common   |basic server config: packages, timezone, acl|ansible-playbook setup.yml --ask-vault-pass|
-|setup    |security |ufw, ssh and fail2ban                       ||
-|setup    |podman |                      ||
-|setup    |monitoring |                      ||
+|Playbook |Roles      |Content                                     |Run |
+|---------|-----------|--------------------------------------------|----|
+|bootstrap|bootstrap  |root substitute                             |ansible-playbook bootstrap.yml -k|
+|setup    |common     |basic server config: packages, timezone, acl|ansible-playbook setup.yml --ask-vault-pass|
+|setup    |security   |ufw, ssh and fail2ban                       ||
+|setup    |podman     |                                            ||
+|setup    |monitoring |                                            ||
 
 ## Server Management
 ### 1. Bootstrap

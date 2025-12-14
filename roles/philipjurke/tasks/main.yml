@@ -4,6 +4,7 @@
 - name: Create app user '{{ philipjurke_user }}'
   user:
     name: "{{ philipjurke_user }}"
+    groups: sshlogin
     shell: /bin/bash
     create_home: yes
     home: "{{ philipjurke_home }}"

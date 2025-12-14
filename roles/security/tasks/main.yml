@@ -44,6 +44,17 @@
 
 # --- 2. SSH ---
 
+- name: Ensure SSH login group exists
+  group:
+    name: sshlogin
+    state: present
+
+- name: Add admin user to SSH group
+  user:
+    name: "{{ admin_user_name }}"
+    groups: sshlogin
+    append: yes
+
 - name: Harden SSH configuration (port, root, passwords)
   lineinfile:
     path: /etc/ssh/sshd_config
@@ -66,7 +77,7 @@
     - { regexp: '^#?UsePAM\s+', line: 'UsePAM yes' }
 
     # --- User Whitelist ---
-    - { regexp: '^#?AllowUsers\s+', line: "AllowUsers {{ admin_user_name }}" }
+    - { regexp: '^#?(AllowUsers|AllowGroups)\s+', line: "AllowGroups sshlogin" }
 
     # --- Session Management (Timeout after 10 min) ---
     - { regexp: '^#?ClientAliveInterval\s+', line: 'ClientAliveInterval 300' }
