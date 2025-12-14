@@ -1,142 +1,86 @@
-# PJurke Infrastructure Ansible Playbooks
-This repository contains the central Ansible playbooks and roles used to manage my server infrastructure.
+# Infrastructure Playbooks
 
-## Concept
-All reusable logic (tasks, templates, handlers) is extracted into individual Ansible Roles.
+This repository manages server infrastructure using Ansible, focusing on
+- security hardening,
+- containerization (Podman & Quadlets),
+- and observability (Grafana Alloy).
 
-This repository defines:
+## Requirements
 
-1. **Playbooks:** The orchestration files (e.g., `bootstrap.yml`).
-2. **Inventory:** The list of servers (`inventory.ini`).
-3. **Secrets:** All encrypted secrets (via Ansible Vault) in the `secrets/` directory.
-4. **Dependencies:** The `requirements.yml`, which defines which external roles and collections are needed.
+- Ansible (installed locally)
+- Ansible Vault Password (for `secrets/`)
+- SSH Access to the target servers
 
-## Requirements (Client)
+## Workflow
 
-1. **Ansible** must be installed locally.
-```bash
-brew install ansible
-```
+Server provisioning follows three logical stages:
 
-2. **sshpass** must be installed locally.
-```bash
-brew install sshpass
-```
+### 1. Bootstrap (Initialization)
 
-3. **Git** must be installed (to clone the roles).
+Prepares a fresh server (with root access) for management by Ansible.
 
-## First-Time Client Setup
-Before you can run any playbooks, you must install all external roles and collections using `ansible-galaxy`:
+- Playbook: `bootstrap.yml`
+- Target: `[bootstrap]` group in `inventory.ini`
+- Actions:
+  - Installs Python 3 & Sudo.
+  - Creates the administrative user `admin-user`.
+  - Deploys the SSH key for `admin-user`.
 
 ```bash
-ansible-galaxy install -r requirements.yml
+ansible-playbook -i inventory.ini bootstrap.yml -k
 ```
 
-This command reads the `requirements.yml` file and downloads all dependencies into your local Ansible path.
+### 2. Setup (Base Configuration)
+
+Applies the baseline configuration to the server. This is the main maintenance playbook.
+
+- Playbook: `setup.yml`
+- Target: `[running_servers] group`
+- Roles:
+  - `common`: Packages, Timezone (Europe/Berlin), ACLs, Unattended Upgrades.
+  - `security`: SSH Port to 3344, UFW Firewall, Fail2Ban, SSH Hardening.
+  - `podman`: Installation and Sysctl adjustments (Port 80 for Rootless).
+  - `monitoring`: Grafana Alloy Agent (Logs & Metrics).
+
+```bash
+ansible-playbook -i inventory.ini setup.yml --ask-vault-pass
+```
+
+### 3. Services & Routing
+
+Deploys the reverse proxy infrastructure and specific services.
+
+- Traefik Proxy:
+  - Playbook: `install-traefik.yml`
+  - Function: Sets up Traefik v3 as a Quadlet service, configures Entrypoints (80/443) and ACME (LetsEncrypt).
+
+- PhilipJurke Website:
+  - Playbook: `deploy-philipjurke.yml`
+  - Function: Deploys the website container and the Traefik router configuration.
+
+```bash
+# Install Traefik
+ansible-playbook -i inventory.ini install-traefik.yml --ask-vault-pass
+
+# Deploy Website
+ansible-playbook -i inventory.ini deploy-philipjurke.yml --ask-vault-pass
+```
 
 ## Secrets Management
-All secrets are managed using Ansible Vault and are stored in the secrets/ directory. The structure is:
 
-```
-secrets/
-├── loki-secrets.yml
-├── philipjurke/
-│   └── vault.yml
-└── textreview/
-    ├── vault.yml
-    ├── production-vault.yml
-    └── staging-vault.yml
-```
+Sensitive data is encrypted with Ansible Vault. The files are located in the `secrets/` directory and loaded automatically by the playbooks.
 
-The playbooks (e.g., `deploy-app.yml`) load these files automatically. You will be prompted for the password via `--ask-vault-pass` when running a command.
+- `secrets/loki-secrets.yml`: Credentials for Logging/Monitoring.
+- `secrets/philipjurke/vault.yml`: App-specific secrets (e.g., GHCR Token).
 
-## Playbooks and Roles
-|Playbook |Roles      |Content                                     |Run |
-|---------|-----------|--------------------------------------------|----|
-|bootstrap|bootstrap  |root substitute                             |ansible-playbook bootstrap.yml -k|
-|setup    |common     |basic server config: packages, timezone, acl|ansible-playbook setup.yml --ask-vault-pass|
-|setup    |security   |ufw, ssh and fail2ban                       ||
-|setup    |podman     |                                            ||
-|setup    |monitoring |                                            ||
+## Structure & Roles
 
-## Server Management
-### 1. Bootstrap
-   1. Add the new server (with `root` access and IP) to the `inventory.ini` under the `[bootstrap]` group:
-   ```ini
-   [bootstrap]
-   new-server-name ansible_host=1.2.3.4 ansible_user=root
-   ```
-
-   2. Run the `initial-setup.yml` playbook. It installs basic security (ufw, fail2ban), changes the SSH port, creates the `adminuser` and `deployeruser`, installs Podman, and sets up monitoring.
-   ```bash
-   # Run this as "root", using "su" as the become method
-   ansible-playbook -i inventory.ini initial-setup.yml --limit new-server-name \
-   --private-key ~/.ssh/id_rsa_adminuser_main-server \
-   --ask-vault-pass \
-   --ask-become-pass \
-   --become-method su
-   ```
-
-   3. IMPORTANT: After the run succeeds, update the `inventory.ini`:
-   - Move the server from `[new_servers]` to `[running_servers]` (and other relevant groups).
-   - Update the entry to use the new port (`3344`) and the `adminuser`:
-   ```ini
-   [running_servers]
-   main-server ansible_host=1.2.3.4 ansible_port=3344 ansible_user=adminuser
-   ```
-
-### 2. Install Traefik Reverse Proxy
-Run this playbook to deploy Traefik to any server in the `[traefik_servers]` group.
-```bash
-ansible-playbook -i inventory.ini install-traefik.yml \
-  --private-key ~/.ssh/id_rsa_adminuser_main-server \
-  --become-method sudo
-```
-
-### 3. Deploy Applications (Staging/Production)
-The `deploy-app.yml` playbook is used to deploy applications like `philipjurke` or `textreview`. Target servers are controlled by groups in `inventory.ini` (e.g., `[philipjurke_servers]`).
-
-The `app_name` and `env` variables control what is deployed where.
-
-```bash
-# Example: Deploy 'textreview' to 'staging'
-ansible-playbook -i inventory.ini deploy-app.yml \
-  --extra-vars "app_name=textreview env=staging" \
-  --private-key ~/.ssh/id_rsa_adminuser_main-server \
-  --become-method sudo \
-  --ask-vault-pass
-```
-
-```bash
-# Example: Deploy 'philipjurke' to 'production' (image_tag is optional)
-ansible-playbook -i inventory.ini deploy-app.yml \
-  --extra-vars "app_name=philipjurke env=production image_tag=1.2.3" \
-  --private-key ~/.ssh/id_rsa_adminuser_main-server \
-  --become-method sudo \
-  --ask-vault-pass
-```
-
-
-
-
-## Self-Hosted GitHub Runner `not used`
-This playbook sets up a runner. Configuration (owner, repo, PAT) must be passed as `extra-vars`.
-
-**For a Repository (PAT needs `repo` scope):**
-```bash
-ansible-playbook -i inventory.ini deploy-runner.yml \
-  --private-key ~/.ssh/id_rsa_adminuser_main-server \
-  --become-method sudo \
-  --extra-vars "github_owner=PJurke" \
-  --extra-vars "github_repository=philipjurke" \
-  --extra-vars "github_pat=your_pat_here"
-```
-
-**For an Organization (PAT needs admin:org scope):**
-```bash
-ansible-playbook -i inventory.ini deploy-runner.yml \
-  --private-key ~/.ssh/id_rsa_adminuser_main-server \
-  --become-method sudo \
-  --extra-vars "github_owner=text-review" \
-  --extra-vars "github_pat=your_pat_here"
-```
+| Role	      | Description                                       |
+|-------------|---------------------------------------------------|
+| bootstrap	  | Initial user & SSH setup.                         |
+| common	    | Basic system tools, ACLs, and updates.            |
+| security	  | Firewall (UFW), Fail2Ban config, SSH hardening.   |
+| podman	    | Container engine setup.                           |
+| monitoring	| Grafana Alloy setup (Loki/Prometheus Exporter).   |
+| traefik	    | Reverse Proxy setup as Systemd Service (Quadlet). |
+| philipjurke	| Deployment of the personal website.               |

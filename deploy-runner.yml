@@ -1,6 +1,0 @@
-- name: "Deploy GitHub Actions Runner"
-  hosts: github_runner_servers
-  become: yes
-
-  roles:
-    - role: github-runner
