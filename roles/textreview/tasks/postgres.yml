@@ -1,0 +1,22 @@
+---
+- name: Deploy Database Volume Quadlet
+  template:
+    src: postgres.volume.j2
+    dest: "{{ textreview_home }}/.config/containers/systemd/textreview-postgres-data.volume"
+    owner: "{{ textreview_user }}"
+    group: "{{ textreview_user }}"
+    mode: '0644'
+  become: yes
+  become_user: "{{ textreview_user }}"
+  notify: Restart TextReview Database
+
+- name: Deploy Database Container Quadlet
+  template:
+    src: postgres.container.j2
+    dest: "{{ textreview_home }}/.config/containers/systemd/textreview-postgres.container"
+    owner: "{{ textreview_user }}"
+    group: "{{ textreview_user }}"
+    mode: '0644'
+  become: yes
+  become_user: "{{ textreview_user }}"
+  notify: Restart TextReview Database

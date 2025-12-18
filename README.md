@@ -64,6 +64,9 @@ ansible-playbook -i inventory.ini install-traefik.yml --ask-vault-pass
 
 # Deploy Website
 ansible-playbook -i inventory.ini deploy-philipjurke.yml --ask-vault-pass
+
+# Deploy Text Review
+ansible-playbook -i inventory.ini deploy-textreview.yml --extra-vars "env=staging" --ask-vault-pass
 ```
 
 ## Secrets Management
@@ -84,3 +87,4 @@ Sensitive data is encrypted with Ansible Vault. The files are located in the `se
 | monitoring	| Grafana Alloy setup (Loki/Prometheus Exporter).   |
 | traefik	    | Reverse Proxy setup as Systemd Service (Quadlet). |
 | philipjurke	| Deployment of the personal website.               |
+| textreview	| Deployment of the Text Review web app.            |

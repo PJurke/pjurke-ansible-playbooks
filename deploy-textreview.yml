@@ -1,0 +1,11 @@
+---
+- name: Deploy TextReview (Staging & Prod)
+  hosts: textreview_servers
+  become: yes
+
+  vars_files:
+    - secrets/textreview/vault.yml
+    - "secrets/textreview/{{ env }}-vault.yml"
+
+  roles:
+    - role: textreview

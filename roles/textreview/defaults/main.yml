@@ -1,0 +1,25 @@
+---
+# Base Confiration
+textreview_user: "{{ app_user | default('textreview-' + env) }}"
+textreview_home: "/home/{{ textreview_user }}"
+
+# Images
+textreview_backend_image: "ghcr.io/pjurke/textreview-backend:latest"
+textreview_frontend_image: "ghcr.io/pjurke/textreview-frontend:latest"
+textreview_postgres_image: "docker.io/library/postgres:18-alpine"
+
+# Domains (Must be overwritten via Inventory/Vars for staging)
+textreview_domain_frontend: "textreview.de"
+textreview_domain_backend: "api.textreview.de"
+
+# Networking & Ports
+# IMPORTANT: Since Traefik runs on the host network or via the host gateway,
+# we must bind the ports to the host (localhost).
+# These ports must be UNIQUE for each environment (staging/production)
+textreview_host_port_frontend: 8080 # Override in staging-vault/vars
+textreview_host_port_backend: 5000  # Override in staging-vault/vars
+
+# Database
+textreview_db_name: "textreviewdb"
+textreview_db_user: "postgres_user"
+# textreview_db_password provided by vault

@@ -1,0 +1,6 @@
+[Unit]
+Description=PostgreSQL Data Volume for TextReview ({{ env }})
+
+[Volume]
+# We assign a unique label name to the volume.
+VolumeName=textreview-postgres-data-{{ env }}

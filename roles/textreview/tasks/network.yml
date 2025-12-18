@@ -1,0 +1,11 @@
+---
+- name: Deploy Network Quadlet
+  template:
+    src: textreview.network.j2
+    dest: "{{ textreview_home }}/.config/containers/systemd/textreview.network"
+    owner: "{{ textreview_user }}"
+    group: "{{ textreview_user }}"
+    mode: '0644'
+  become: yes
+  become_user: "{{ textreview_user }}"
+  notify: Restart TextReview Network

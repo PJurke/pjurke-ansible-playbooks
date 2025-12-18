@@ -1,0 +1,38 @@
+[Unit]
+Description=TextReview PostgreSQL Database ({{ env }})
+After=network-online.target textreview.network textreview-postgres-data.volume
+Requires=textreview-postgres-data.volume
+
+[Container]
+Image={{ textreview_postgres_image }}
+AutoUpdate=registry
+
+# --- NETWORK & DNS ---
+# Important: The container is called “textreview-postgres” in the network.
+# The backend can therefore access it under this host name.
+ContainerName=textreview-postgres
+Network=textreview.network
+
+# --- PERSISTENCY ---
+# We mount the above defined volume to /var/lib/postgresql/data.
+# The :Z flag is important for SELinux (also on Ubuntu sometimes relevant).
+Volume=textreview-postgres-data.volume:/var/lib/postgresql/data:Z
+
+# --- CONFIGURATION ---
+Environment=POSTGRES_DB={{ textreview_db_name }}
+Environment=POSTGRES_USER={{ textreview_db_user }}
+Environment=POSTGRES_PASSWORD={{ textreview_db_password }}
+
+# --- HEALTHCHECK ---
+# A healthcheck ensures that systemd knows when the DB is really "up".
+HealthCmd=pg_isready -U {{ textreview_db_user }} -d {{ textreview_db_name }}
+HealthInterval=30s
+HealthRetries=3
+HealthStartPeriod=20s
+
+[Service]
+Restart=always
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target

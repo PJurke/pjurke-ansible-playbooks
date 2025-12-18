@@ -1,0 +1,27 @@
+---
+- name: Create app user '{{ textreview_user }}'
+  user:
+    name: "{{ textreview_user }}"
+    shell: /bin/bash
+    create_home: yes
+    home: "{{ textreview_home }}"
+    state: present
+
+- name: Reload user facts (for UID access)
+  getent:
+    database: passwd
+    key: "{{ textreview_user }}"
+
+- name: Enable lingering (for rootless containers & auto-update)
+  command: "loginctl enable-linger {{ textreview_user }}"
+  register: linger_result
+  changed_when: "'Created' in linger_result.stderr"
+
+- name: Create systemd directory for Quadlets
+  file:
+    path: "{{ textreview_home }}/.config/containers/systemd"
+    state: directory
+    owner: "{{ textreview_user }}"
+    group: "{{ textreview_user }}"
+    mode: '0755'
+    recurse: yes

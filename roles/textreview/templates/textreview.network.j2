@@ -1,0 +1,9 @@
+[Unit]
+Description=Internal Network for TextReview {{ env }}
+
+[Network]
+# An internal bridge network with DNS resolution
+Driver=bridge
+# Isolates the network (no direct access from outside, except via port mapping)
+Internal=false
+IPv6=false

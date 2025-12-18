@@ -1,0 +1,22 @@
+---
+- name: Restart TextReview Network
+  become: yes
+  become_user: "{{ textreview_user }}"
+  systemd:
+    daemon_reload: yes       # Important: Generate the units from the quadlets
+    name: textreview-network.service # Important: .network becomes -network.service
+    state: restarted
+    scope: user
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.getent_passwd[textreview_user][1] }}"
+
+- name: Restart TextReview Database
+  become: yes
+  become_user: "{{ textreview_user }}"
+  systemd:
+    daemon_reload: yes
+    name: textreview-postgres.service # .container becomes .service
+    state: restarted
+    scope: user
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.getent_passwd[textreview_user][1] }}"
