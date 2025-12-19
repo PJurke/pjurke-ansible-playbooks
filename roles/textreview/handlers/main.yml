@@ -31,3 +31,9 @@
     scope: user
   environment:
     XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.getent_passwd[textreview_user][1] }}"
+
+- name: Restart SSH Host Service
+  become: yes
+  service:
+    name: ssh
+    state: restarted

@@ -5,6 +5,8 @@
     shell: /bin/bash
     create_home: yes
     home: "{{ textreview_home }}"
+    groups: sshlogin
+    append: yes
     state: present
 
 - name: Reload user facts (for UID access)
