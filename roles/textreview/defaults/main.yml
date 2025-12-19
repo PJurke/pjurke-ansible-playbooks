@@ -1,4 +1,6 @@
 ---
+textreview_github_deploy_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAfLZFt0pN0QZDaaOfw388F3k7uDvdfj+cMuyUez+qV5 github-actions-textreview"
+
 # Base Confiration
 textreview_user: "{{ app_user | default('textreview-' + env) }}"
 textreview_home: "/home/{{ textreview_user }}"

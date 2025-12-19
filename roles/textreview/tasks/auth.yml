@@ -1,0 +1,12 @@
+---
+- name: Authorize GitHub Actions Deploy Key (Restricted)
+  ansible.posix.authorized_key:
+    user: "{{ textreview_user }}"
+    state: present
+    key: "{{ textreview_github_deploy_public_key }}"
+    # IMPORTANT: Security feature!
+    # This key may ONLY execute ‘podman auto-update’.
+    # No shell, no port forwarding, no X11.
+    key_options: 'command="/usr/bin/podman auto-update",no-port-forwarding,no-x11-forwarding,no-agent-forwarding,no-pty'
+    comment: "GitHub Actions Auto-Deploy Trigger"
+  when: textreview_github_deploy_public_key is defined
