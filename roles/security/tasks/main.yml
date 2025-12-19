@@ -35,6 +35,8 @@
     port: "{{ item | string }}"
     proto: tcp
   loop: "{{ security_allowed_tcp_ports }}"
+  loop_control:
+    label: "{{ item }}"
   tags: [security, ufw]
 
 - name: Enable UFW
