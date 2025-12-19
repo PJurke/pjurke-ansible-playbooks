@@ -1,0 +1,20 @@
+http:
+  routers:
+    # --- BACKEND ROUTER ---
+    textreview-backend-{{ env }}-router:
+      # Responds to api.staging.textreview.org (or api.textreview.org)
+      rule: "Host(`{{ textreview_domain_backend }}`)"
+      service: "textreview-backend-{{ env }}-service"
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: myresolver
+
+  services:
+    # --- BACKEND SERVICE ---
+    textreview-backend-{{ env }}-service:
+      loadBalancer:
+        servers:
+          # We use the host gateway IP to access the Traefik container
+          # to access the Backend-Container (which listens on the host port).
+          - url: "http://host.containers.internal:{{ textreview_host_port_backend }}"

@@ -88,3 +88,7 @@ Sensitive data is encrypted with Ansible Vault. The files are located in the `se
 | traefik	    | Reverse Proxy setup as Systemd Service (Quadlet). |
 | philipjurke	| Deployment of the personal website.               |
 | textreview	| Deployment of the Text Review web app.            |
+
+
+Variablen
+- textreview_host_port_backend

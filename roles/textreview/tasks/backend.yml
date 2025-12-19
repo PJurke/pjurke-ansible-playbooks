@@ -1,0 +1,21 @@
+---
+- name: Log in to GHCR.io (Private Repo Access)
+  command: >
+    podman login ghcr.io
+    --username "{{ github_username }}"
+    --password "{{ github_token }}"
+  become: yes
+  become_user: "{{ textreview_user }}"
+  no_log: yes
+  when: github_token is defined
+
+- name: Deploy Backend Quadlet
+  template:
+    src: backend.container.j2
+    dest: "{{ textreview_home }}/.config/containers/systemd/textreview-backend.container"
+    owner: "{{ textreview_user }}"
+    group: "{{ textreview_user }}"
+    mode: '0644'
+  become: yes
+  become_user: "{{ textreview_user }}"
+  notify: Restart TextReview Backend

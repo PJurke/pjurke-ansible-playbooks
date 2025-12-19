@@ -20,3 +20,14 @@
     scope: user
   environment:
     XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.getent_passwd[textreview_user][1] }}"
+
+- name: Restart TextReview Backend
+  become: yes
+  become_user: "{{ textreview_user }}"
+  systemd:
+    daemon_reload: yes
+    name: textreview-backend.service
+    state: restarted
+    scope: user
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.getent_passwd[textreview_user][1] }}"

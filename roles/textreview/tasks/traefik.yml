@@ -1,0 +1,9 @@
+---
+- name: Deploy Traefik Router Config for TextReview
+  template:
+    src: traefik-router.yml.j2
+    dest: "{{ traefik_dynamic_conf_dir_host | default('/opt/traefik/dynamic') }}/textreview-{{ env }}.yml"
+    owner: root
+    group: root
+    mode: '0644'
+  become: yes

@@ -2,3 +2,5 @@
 - include_tasks: user.yml
 - include_tasks: network.yml
 - include_tasks: postgres.yml
+- include_tasks: backend.yml
+- include_tasks: traefik.yml

@@ -1,0 +1,36 @@
+[Unit]
+Description=TextReview Backend ({{ env }})
+# We will only start when the database is ready.
+After=network-online.target textreview-network.service textreview-postgres.service
+Requires=textreview-postgres.service
+
+[Container]
+Image={{ textreview_backend_image }}
+AutoUpdate=registry
+
+# --- NETWORK & IDENTITY ---
+ContainerName=textreview-backend
+Network=textreview.network
+
+# --- EXPOSITION FOR TRAEFIK ---
+# We map the internal port 8080 (ASP.NET default) to the host port.
+# Traefik will later access it via http://host.containers.internal:{{ textreview_host_port_backend }}.
+PublishPort={{ textreview_host_port_backend }}:8080
+
+# --- CONFIGURATION ---
+Environment=ASPNETCORE_URLS=http://+:8080
+Environment=ASPNETCORE_ENVIRONMENT={{ 'Production' if env == 'production' else 'Staging' }}
+
+# Database Connection (Host = ContainerName of DB)
+Environment=DatabaseURL=Host=textreview-postgres;Port=5432;Database={{ textreview_db_name }};Username={{ textreview_db_user }};Password={{ textreview_db_password }}
+Environment=ConnectionStrings__DefaultConnection="Host=textreview-postgres;Port=5432;Database={{ textreview_db_name }};Username={{ textreview_db_user }};Password={{ textreview_db_password }}"
+
+# CORS Configuration (Allows frontend access)
+Environment=AllowedOrigins=https://{{ textreview_domain_frontend }}
+
+[Service]
+Restart=always
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target

@@ -4,13 +4,13 @@ textreview_user: "{{ app_user | default('textreview-' + env) }}"
 textreview_home: "/home/{{ textreview_user }}"
 
 # Images
-textreview_backend_image: "ghcr.io/pjurke/textreview-backend:latest"
-textreview_frontend_image: "ghcr.io/pjurke/textreview-frontend:latest"
+textreview_backend_image: "ghcr.io/text-review/text-review-backend:latest"
+textreview_frontend_image: "this repo must be set"
 textreview_postgres_image: "docker.io/library/postgres:18-alpine"
 
 # Domains (Must be overwritten via Inventory/Vars for staging)
-textreview_domain_frontend: "textreview.de"
-textreview_domain_backend: "api.textreview.de"
+textreview_domain_frontend: "textreview.org"
+textreview_domain_backend: "api.textreview.org"
 
 # Networking & Ports
 # IMPORTANT: Since Traefik runs on the host network or via the host gateway,
