@@ -7,13 +7,16 @@
     groups: sshlogin
     shell: /bin/bash
     create_home: yes
-    home: "{{ philipjurke_home }}"
     state: present
 
 - name: Reload user facts (for UID access)
   getent:
     database: passwd
     key: "{{ philipjurke_user }}"
+
+- name: Set dynamic home path variable
+  set_fact:
+    philipjurke_home: "{{ ansible_facts.getent_passwd[philipjurke_user][4] }}"
 
 - name: Enable lingering (for rootless containers)
   command: "loginctl enable-linger {{ philipjurke_user }}"
@@ -51,6 +54,7 @@
   become_user: "{{ philipjurke_user }}"
   no_log: yes
   when: ghcr_token is defined
+  changed_when: false
 
 - name: Create systemd directory for Quadlets
   file:

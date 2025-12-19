@@ -1,7 +1,7 @@
 ---
 # Users and paths
 philipjurke_user: philipjurke-user
-philipjurke_home: "/home/{{ philipjurke_user }}"
+# philipjurke_home: "/home/{{ philipjurke_user }}" (Calculated dynamically in tasks)
 
 # Container Details
 # Adjust if the image has a different name (e.g., ghcr.io/pjurke/philipjurke)

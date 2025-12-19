@@ -8,6 +8,7 @@
   become_user: "{{ textreview_user }}"
   no_log: yes
   when: github_token is defined
+  changed_when: false
 
 - name: Deploy Backend Quadlet
   template:

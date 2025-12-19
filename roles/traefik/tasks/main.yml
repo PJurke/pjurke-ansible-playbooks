@@ -5,7 +5,6 @@
     name: "{{ traefik_user }}"
     shell: /bin/bash
     create_home: yes
-    home: "/home/{{ traefik_user }}"
     state: present
   register: traefik_user_info # We need the .uid from it.
 
@@ -28,7 +27,7 @@
 
 - name: Create system directory for user
   file:
-    path: "/home/{{ traefik_user }}/.config/containers/systemd"
+    path: "{{ traefik_user_info.home }}/.config/containers/systemd"
     state: directory
     owner: "{{ traefik_user }}"
     group: "{{ traefik_user }}"
@@ -38,7 +37,7 @@
 - name: Copy Traefik configuration (traefik.yml)
   template:
     src: traefik.yml.j2
-    dest: "/home/{{ traefik_user }}/traefik.yml"
+    dest: "{{ traefik_user_info.home }}/traefik.yml"
     owner: "{{ traefik_user }}"
     group: "{{ traefik_user }}"
     mode: '0640' # Readable only by Traefik
@@ -47,7 +46,7 @@
 - name: Copy Traefik Quadlet (.container)
   template:
     src: traefik.container.j2
-    dest: "/home/{{ traefik_user }}/.config/containers/systemd/traefik.container"
+    dest: "{{ traefik_user_info.home }}/.config/containers/systemd/traefik.container"
     owner: "{{ traefik_user }}"
     group: "{{ traefik_user }}"
     mode: '0644'
