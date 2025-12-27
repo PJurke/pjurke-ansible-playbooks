@@ -20,6 +20,7 @@ PublishPort={{ textreview_host_port_backend }}:8080
 # --- CONFIGURATION ---
 Environment=ASPNETCORE_URLS=http://+:8080
 Environment=ASPNETCORE_ENVIRONMENT={{ 'Production' if env == 'production' else 'Staging' }}
+Environment=BotApiKey={{ textreview_bot_api_key }}
 
 # Database Connection (Host = ContainerName of DB)
 Environment=DatabaseURL=Host=textreview-postgres;Port=5432;Database={{ textreview_db_name }};Username={{ textreview_db_user }};Password={{ textreview_db_password }}
